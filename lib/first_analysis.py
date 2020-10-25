@@ -28,17 +28,15 @@ else:
     train_set = pd.read_csv(PATH_PREPRO + "train_set.csv")
     test_set = pd.read_csv(PATH_PREPRO + "test_set.csv")
 
-
 train_set = pd.merge(train_set, train, on='segment_id')
 train_set = train_set.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
 test_set = test_set.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
 
-
 # Training
-params = {'num_leaves': 600, 'max_bin': 2713, 'num_iterations': 2250,
-          'n_estimators': 2800, 'max_depth': 35, 'min_child_samples': 543,
+params = {'num_leaves': 600, 'max_bin': 2713, 'num_iterations': 7000,
+          'n_estimators': 2800, 'max_depth': 30, 'min_child_samples': 543,
           'learning_rate': 0.0065, 'min_data_in_leaf': 40,
-          'bagging_fraction': 0.78359, 'feature_fraction': 0.08613,
+          'bagging_fraction': 0.75, 'feature_fraction': 0.086,
           'random_state': 42}
 model = LGBMRegressor(**params)
 
@@ -55,19 +53,14 @@ if not SUBMIT:
     feature_imp = pd.DataFrame(sorted(zip(model.feature_importances_,
                                           train.columns)),
                                columns=['Value', 'Feature'])
-    plt.figure(figsize=(10, 20))
+    plt.figure(figsize=(10, 40))
     sns.barplot(x="Value", y="Feature",
                 data=feature_imp.sort_values(by="Value", ascending=False))
     plt.title('LightGBM Features (avg over folds)')
     plt.tight_layout()
     plt.savefig('../data/lgbm_importances-01.png')
-
 else:
     model.fit(train, y)
-
-
-# Submission
-if SUBMIT:
     segments = test_set.segment_id
     test_set = test_set[train.columns]
     preds = model.predict(test_set)
