@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
-import math
+
+"""Contains the functions preprocessing the data, or grabing the data"""
+
 import numpy as np
 import pandas as pd
 from scipy import fftpack  # Fourier
-from sklearn.metrics import mean_squared_error as mse
 from scipy.ndimage import maximum_filter1d
 from librosa.feature import mfcc, spectral_contrast
 from tqdm import tqdm
-import pywt
 
 PATH_DATA = "../data/"
 
 
-def load_segment(id):
+def load_segment(segment_id):
     """Returns the data about a specific segment_id"""
     try:
-        return pd.read_csv(f"{PATH_DATA}train/{id}.csv")
+        return pd.read_csv(f"{PATH_DATA}train/{segment_id}.csv")
     except FileNotFoundError:
-        return pd.read_csv(f"{PATH_DATA}test/{id}.csv")
+        return pd.read_csv(f"{PATH_DATA}test/{segment_id}.csv")
 
 
 def get_index(target="train"):
@@ -27,20 +27,14 @@ def get_index(target="train"):
     return data["segment_id"].values
 
 
-def maddest(d, axis=None):
-    return np.mean(np.absolute(d - np.mean(d, axis)), axis)
-
-
-def denoise_signal(x, wavelet='db4', level=1):
-    coeff = pywt.wavedec(x, wavelet, mode="per")
-    sigma = (1/0.6745) * maddest(coeff[-level])
-    uthresh = sigma * np.sqrt(2*np.log(len(x)))
-    coeff[1:] = (pywt.threshold(i, value=uthresh,
-                                mode='hard') for i in coeff[1:])
-    return pywt.waverec(coeff, wavelet, mode='per')
+def maddest(serie, axis=None):
+    """Returns the mean of de deviation of a serie"""
+    return np.mean(np.absolute(serie - np.mean(serie, axis)), axis)
 
 
 def get_features(sig, sensor_id):
+    """Analysis of a signal. Grabs temporal and frequential features.
+    Returns a pandas dataframe"""
     fourier = fftpack.fft(sig.values)
     real, imag = np.real(fourier), np.imag(fourier)
 
@@ -76,25 +70,20 @@ def get_features(sig, sensor_id):
         mfcc_mean = mfcc_.mean(axis=1)
         for i in range(20):
             features[f"{sensor_id}_mfcc_mean_{i}"] = mfcc_mean[i]
-    except:
-        pass
 
-    # Contrast spectral
-    try:
-        sc = spectral_contrast(sig.values).mean(axis=1)
+        # Contrast spectral
+        spec_contrast = spectral_contrast(sig.values).mean(axis=1)
         for i in range(7):
-            features[f"{sensor_id}_lib_spec_cont_{i}"] = sc[i]
+            features[f"{sensor_id}_lib_spec_cont_{i}"] = spec_contrast[i]
     except:
         pass
 
     return pd.DataFrame.from_dict(features)
 
 
-def rmse(y_true, y_pred):
-    return math.sqrt(mse(y_true, y_pred))
-
-
 def preprocess_data(target="train"):
+    """Generates a dataframe containing all the features of a
+    dataset (train or test)"""
     data_set = []
     for seg in tqdm(get_index(target)):
         train_row = [pd.DataFrame.from_dict({"segment_id": [seg]})]

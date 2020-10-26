@@ -1,18 +1,23 @@
 # -*- coding: utf-8 -*-
 
+"""Script that trains the decision tree. Set WRITE to True in order to
+generate csv files of preprocessed data.
+Set SUBMIT to True to generate the submission file post training"""
+
 import re
+import warnings
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error as mse
 from lightgbm import LGBMRegressor
-from utils import preprocess_data, rmse
 import matplotlib.pyplot as plt
 import seaborn as sns
-import warnings
+from utils import preprocess_data
 warnings.filterwarnings("ignore")
+
 
 WRITE = True
 SUBMIT = False
-
 PATH_DATA = "../data/"
 PATH_PREPRO = PATH_DATA + "preprocessing/"
 
@@ -49,7 +54,7 @@ if not SUBMIT:
                                             test_size=0.2)
     model.fit(train, y)
     preds = model.predict(val)
-    print('Simple LGB model rmse: ', rmse(y_val, preds))
+    print('Simple LGB model rmse: ', mse(y_val, preds, squared=False))
     feature_imp = pd.DataFrame(sorted(zip(model.feature_importances_,
                                           train.columns)),
                                columns=['Value', 'Feature'])
