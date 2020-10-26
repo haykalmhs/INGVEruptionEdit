@@ -7,6 +7,7 @@ from sklearn.metrics import mean_squared_error as mse
 from scipy.ndimage import maximum_filter1d
 from librosa.feature import mfcc, spectral_contrast
 from tqdm import tqdm
+import pywt
 
 PATH_DATA = "../data/"
 
@@ -24,6 +25,19 @@ def get_index(target="train"):
     file = "train" if target == "train" else "sample_submission"
     data = pd.read_csv(f"{PATH_DATA}{file}.csv")
     return data["segment_id"].values
+
+
+def maddest(d, axis=None):
+    return np.mean(np.absolute(d - np.mean(d, axis)), axis)
+
+
+def denoise_signal(x, wavelet='db4', level=1):
+    coeff = pywt.wavedec(x, wavelet, mode="per")
+    sigma = (1/0.6745) * maddest(coeff[-level])
+    uthresh = sigma * np.sqrt(2*np.log(len(x)))
+    coeff[1:] = (pywt.threshold(i, value=uthresh,
+                                mode='hard') for i in coeff[1:])
+    return pywt.waverec(coeff, wavelet, mode='per')
 
 
 def get_features(sig, sensor_id):
@@ -44,7 +58,8 @@ def get_features(sig, sensor_id):
     features[f"{sensor_id}_q75"] = [np.quantile(sig, 0.75)]
     features[f"{sensor_id}_q95"] = [np.quantile(sig, 0.95)]
     grad_rol_max = [maximum_filter1d(np.gradient(np.abs(sig.values)), 50)]
-    features[f"{sensor_id}_grmax_delta"] = np.max(grad_rol_max) - np.min(grad_rol_max)
+    delta = np.max(grad_rol_max) - np.min(grad_rol_max)
+    features[f"{sensor_id}_grmax_delta"] = delta
 
     # Frequencial
     features[f"{sensor_id}_real_mean"] = [real.mean()]
@@ -54,24 +69,21 @@ def get_features(sig, sensor_id):
     features[f"{sensor_id}_imag_mean"] = [imag.mean()]
     features[f"{sensor_id}_imag_var"] = [imag.var()]
     features[f"{sensor_id}_imag_delta"] = [imag.max() - imag.min()]
-    
+
     # Mel-frequency cepstral coefficients
     try:
         mfcc_ = mfcc(sig.values)
         mfcc_mean = mfcc_.mean(axis=1)
         for i in range(20):
             features[f"{sensor_id}_mfcc_mean_{i}"] = mfcc_mean[i]
-        # features[f"{sensor_id}_mfcc_mean4"] = mfcc_mean[4]
-        # features[f"{sensor_id}_mfcc_mean5"] = mfcc_mean[5]
-        # features[f"{sensor_id}_mfcc_mean18"] = mfcc_mean[18]
     except:
         pass
-    
+
     # Contrast spectral
     try:
-        lib_spectral_contrast = spectral_contrast(sig.values).mean(axis=1)
-        for i in range(10):
-            features[f"{sensor_id}_lib_spectral_contrast_{i}"] = lib_spectral_contrast[i]
+        sc = spectral_contrast(sig.values).mean(axis=1)
+        for i in range(7):
+            features[f"{sensor_id}_lib_spec_cont_{i}"] = sc[i]
     except:
         pass
 
