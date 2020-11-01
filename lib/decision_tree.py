@@ -16,8 +16,8 @@ from utils import preprocess_data
 warnings.filterwarnings("ignore")
 
 
-WRITE = True
-SUBMIT = False
+WRITE = False
+SUBMIT = True
 PATH_DATA = "../data/"
 PATH_PREPRO = PATH_DATA + "preprocessing/"
 
@@ -37,12 +37,12 @@ train_set = pd.merge(train_set, train, on='segment_id')
 train_set = train_set.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
 test_set = test_set.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
 
-# Training
-params = {'num_leaves': 600, 'max_bin': 2713, 'num_iterations': 7000,
-          'n_estimators': 2800, 'max_depth': 30, 'min_child_samples': 543,
-          'learning_rate': 0.0065, 'min_data_in_leaf': 40,
-          'bagging_fraction': 0.75, 'feature_fraction': 0.086,
-          'random_state': 42}
+# Training (opt 2.727.499)
+params = {'learning_rate': 0.2894526698568187, 'boosting_type': 'dart',
+          'objective': 'regression', 'metric': 'mae',
+          'sub_feature': 0.5279155828037814, 'num_leaves': 316,
+          'min_data': 48, 'max_depth': 85, 'max_bin': 1057,
+          'min_data_in_leaf': 63, 'n_estimators': 1903}
 model = LGBMRegressor(**params)
 
 train = train_set.drop(['segment_id', 'time_to_eruption'], axis=1)
@@ -61,10 +61,10 @@ if not SUBMIT:
     plt.figure(figsize=(10, 40))
     sns.barplot(x="Value", y="Feature",
                 data=feature_imp.sort_values(by="Value", ascending=False))
-    print(feature_imp.sort_values(by="Value", ascending=False))
     plt.title('LightGBM Features (avg over folds)')
     plt.tight_layout()
     plt.savefig('../data/lgbm_importances-01.png')
+
 else:
     model.fit(train, y)
     segments = test_set.segment_id

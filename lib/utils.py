@@ -8,6 +8,7 @@ from scipy import fftpack  # Fourier
 from scipy.ndimage import maximum_filter1d
 from librosa.feature import mfcc, spectral_contrast
 from tqdm import tqdm
+from tsfresh.feature_extraction import feature_calculators
 
 PATH_DATA = "../data/"
 
@@ -63,11 +64,17 @@ def get_features(sig, sensor_id):
     features[f"{sensor_id}_imag_mean"] = [imag.mean()]
     features[f"{sensor_id}_imag_var"] = [imag.var()]
     features[f"{sensor_id}_imag_delta"] = [imag.max() - imag.min()]
-
-    # Mel-frequency cepstral coefficients
+    
+    #Other Temporal
+    features[f"{sensor_id}_nb_peek"] = feature_calculators.number_peaks(sig, 3)
+    features[f"{sensor_id}_zero_crossing"] = [len(np.where(np.diff(np.sign(sig.values)))[0])]
+    features[f"{sensor_id}_abs_q95"] = [np.quantile(np.abs(sig), 0.95)]
+    features[f"{sensor_id}_median_roll_std"] = [np.median(sig.rolling(50).std().dropna().values)]
+    features[f"{sensor_id}_autocorr5"] = feature_calculators.autocorrelation(sig, 5)
+    
     try:
-        mfcc_ = mfcc(sig.values)
-        mfcc_mean = mfcc_.mean(axis=1)
+        # Mel-frequency cepstral coefficients
+        mfcc_mean = mfcc(sig.values).mean(axis=1)
         for i in range(20):
             features[f"{sensor_id}_mfcc_mean_{i}"] = mfcc_mean[i]
 
@@ -98,3 +105,7 @@ def preprocess_data(target="train"):
     data_set.fillna(-1, inplace=True)
     data_set.drop(['index'], axis=1, inplace=True)
     return data_set
+
+
+def lr_decay(current_iter):
+    return max(1e-3, 0.29 * np.power(.995, current_iter))
