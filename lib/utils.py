@@ -108,4 +108,4 @@ def preprocess_data(target="train"):
 
 
 def lr_decay(current_iter):
-    return max(1e-3, 0.29 * np.power(.995, current_iter))
+    return max(1e-1, 0.29 * np.power(.9985, current_iter))

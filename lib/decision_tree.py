@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore")
 
 
 WRITE = False
-SUBMIT = True
+SUBMIT = False
 PATH_DATA = "../data/"
 PATH_PREPRO = PATH_DATA + "preprocessing/"
 
@@ -37,12 +37,12 @@ train_set = pd.merge(train_set, train, on='segment_id')
 train_set = train_set.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
 test_set = test_set.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
 
-# Training (opt 2.727.499)
-params = {'learning_rate': 0.2894526698568187, 'boosting_type': 'dart',
+# Training (opt 2.604.528)
+params = {'learning_rate': 0.24657446054568, 'boosting_type': 'dart',
           'objective': 'regression', 'metric': 'mae',
-          'sub_feature': 0.5279155828037814, 'num_leaves': 316,
-          'min_data': 48, 'max_depth': 85, 'max_bin': 1057,
-          'min_data_in_leaf': 63, 'n_estimators': 1903}
+          'sub_feature': 0.48729884651486133, 'num_leaves': 469,
+          'min_data': 57, 'max_depth': 155, 'max_bin': 1274,
+          'min_data_in_leaf': 59, 'n_estimators': 2939}
 model = LGBMRegressor(**params)
 
 train = train_set.drop(['segment_id', 'time_to_eruption'], axis=1)
