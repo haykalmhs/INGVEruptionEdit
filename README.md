@@ -33,4 +33,4 @@ Download the dataset here: https://www.kaggle.com/c/predict-volcanic-eruptions-i
     
    
 ## Results:
-I was able to reach the second position on the leaderboard with a score of 4780462 (mean absolute error).
+I was able to reach the first position on the leaderboard with a score of 3.84e6 (mean absolute error).
