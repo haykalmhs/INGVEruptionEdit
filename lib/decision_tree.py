@@ -16,7 +16,7 @@ from utils import preprocess_data
 warnings.filterwarnings("ignore")
 
 
-WRITE = False
+WRITE = True
 SUBMIT = False
 PATH_DATA = "../data/"
 PATH_PREPRO = PATH_DATA + "preprocessing/"
@@ -38,11 +38,13 @@ train_set = train_set.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
 test_set = test_set.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
 
 # Training (opt 2.604.528)
-params = {'learning_rate': 0.24657446054568, 'boosting_type': 'dart',
+params = {'learning_rate': 0.2685684371804056, 'boosting_type': 'dart',
           'objective': 'regression', 'metric': 'mae',
-          'sub_feature': 0.48729884651486133, 'num_leaves': 469,
-          'min_data': 57, 'max_depth': 155, 'max_bin': 1274,
-          'min_data_in_leaf': 59, 'n_estimators': 2939}
+          'sub_feature': 0.6191142906653122, 'num_leaves': 408,
+          'min_data': 21, 'max_depth': 132, 'max_bin': 2693,
+          'min_data_in_leaf': 69, 'n_estimators': 3232,
+          "num_iterations": 7000}
+
 model = LGBMRegressor(**params)
 
 train = train_set.drop(['segment_id', 'time_to_eruption'], axis=1)
@@ -54,11 +56,11 @@ if not SUBMIT:
                                             test_size=0.2)
     model.fit(train, y)
     preds = model.predict(val)
-    print('Simple LGB model rmse: ', mse(y_val, preds, squared=False))
+    print(f'Simple LGB model rmse: {mse(y_val, preds, squared=False):.0f}')
     feature_imp = pd.DataFrame(sorted(zip(model.feature_importances_,
                                           train.columns)),
                                columns=['Value', 'Feature'])
-    plt.figure(figsize=(10, 40))
+    plt.figure(figsize=(10, 50))
     sns.barplot(x="Value", y="Feature",
                 data=feature_imp.sort_values(by="Value", ascending=False))
     plt.title('LightGBM Features (avg over folds)')
