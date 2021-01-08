@@ -26,6 +26,7 @@ Download the dataset here: https://www.kaggle.com/c/predict-volcanic-eruptions-i
     - utils.py: contains the preprocessing of the data and some useful functions to access data
     - neural_net.py: contains the definition and training of the neural network
     - decision_tree.py: contains the definition and training of lightgbm tree
+    - forest.py: implements a forest of decision trees. The average prediction is calculated
    
 - data/:
     - preprocessing/: contains the features extracted from the signals
