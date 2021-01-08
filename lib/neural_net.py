@@ -19,6 +19,7 @@ sess = tf.compat.v1.Session(
     config=tf.compat.v1.ConfigProto(log_device_placement=True))
 from numpy.random import seed
 from tensorflow.random import set_seed
+from utils import preprocess_data
 
 seed(2020)
 set_seed(2021)
@@ -27,19 +28,28 @@ NB_MODELS = 8
 K_FOLD = 5
 BATCH_SIZE = 4096*2
 EPOCHS = 1500
+GENERATE_PREPRO = True
+
 
 PATH_DATA = "../data/"
 PATH_PREPRO = PATH_DATA + "preprocessing/"
 
+if GENERATE_PREPRO:
+    train_set = preprocess_data()
+    train_set.to_csv(PATH_PREPRO + "train_set.csv", index=False)
+    test_set = preprocess_data("test")
+    test_set.to_csv(PATH_PREPRO + "test_set.csv", index=False)
+else:
+  train_set = pd.read_csv(PATH_PREPRO + "train_set.csv")
+  test = pd.read_csv(PATH_PREPRO + "test_set.csv")
+  
 train = pd.read_csv(PATH_DATA + "train.csv")
-train_set = pd.read_csv(PATH_PREPRO + "train_set.csv")
 train_set = pd.merge(train_set, train, on='segment_id')
 train_set = train_set.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
 
 train_sample = train_set.drop(['segment_id', 'time_to_eruption'], axis=1)
 targets = train_set['time_to_eruption']
 submission = pd.read_csv(PATH_DATA + 'sample_submission.csv')
-test = pd.read_csv(PATH_PREPRO + "test_set.csv")
 test.drop(['segment_id'], axis=1, inplace=True)
 test = test[train_sample.columns]
 
