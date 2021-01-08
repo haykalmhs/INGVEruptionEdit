@@ -17,10 +17,17 @@ import tensorflow as tf
 warnings.filterwarnings("ignore")
 sess = tf.compat.v1.Session(
     config=tf.compat.v1.ConfigProto(log_device_placement=True))
+from numpy.random import seed
+from tensorflow.random import set_seed
 
-NB_MODELS = 5
-K_FOLD = 3
+seed(2020)
+set_seed(2021)
+
+NB_MODELS = 8
+K_FOLD = 5
 BATCH_SIZE = 4096*2
+EPOCHS = 1500
+
 PATH_DATA = "../data/"
 PATH_PREPRO = PATH_DATA + "preprocessing/"
 
@@ -47,8 +54,8 @@ def get_model():
     x = Flatten()(x)
     x = Dense(64, activation="relu")(x)
     x = Dense(32, activation="relu")(x)
-
     ttf = Dense(1, activation='relu', name='regressor')(x)
+
     model = models.Model(inputs=inp, outputs=ttf)
     opt = optimizers.Nadam(lr=0.005)
     model.compile(optimizer=opt, loss='mae', metrics=['mae'])
@@ -79,7 +86,7 @@ while i < NB_MODELS:
     oof = np.zeros(len(train_sample))
     prediction = np.zeros(len(submission))
 
-    for fold_n, (train_index, valid_index) in enumerate(kf):
+    for _, (train_index, valid_index) in enumerate(kf):
 
         train_x = train_sample.iloc[train_index]
         train_y = targets.iloc[train_index]
@@ -104,7 +111,7 @@ while i < NB_MODELS:
                                         save_best_only=True)
 
         model.fit(train_x, train_y,
-                  epochs=1500, callbacks=[cb_checkpoint],
+                  epochs=EPOCHS, callbacks=[cb_checkpoint],
                   batch_size=BATCH_SIZE, verbose=0,
                   validation_data=(valid_x, [valid_y]))
 
@@ -115,6 +122,7 @@ while i < NB_MODELS:
 
     # Obtain the MAE for this run.
     model_score = mse(targets, oof, squared=False)/1e6
+
     if model_score < 2.77:
         print(f'MAE: {model_score:.2f} averaged')
         oof_final += oof/NB_MODELS
@@ -126,4 +134,4 @@ while i < NB_MODELS:
 
 print(f"\nMAE for NN: {mse(targets, oof_final, squared=False):.0f}")
 submission['time_to_eruption'] = sub_final
-submission.to_csv('../data/submission2.csv', index=False)
+submission.to_csv(PATH_DATA + 'submission.csv', index=False)
