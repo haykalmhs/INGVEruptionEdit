@@ -24,7 +24,9 @@ Identifying the exact sensors may be possible but would not be in the spirit of 
 Download the dataset here: https://www.kaggle.com/c/predict-volcanic-eruptions-ingv-oe/data
 - Lib/:
     - utils.py: contains the preprocessing of the data and some useful functions to access data
-    - decision_tree.py: contains the definition and training of the decision tree with gradient boosting (lightgbm)
+    - neural_net.py: contains the definition and training of the neural network
+    - decision_tree.py: contains the definition and training of lightgbm tree
+   
 - data/:
     - preprocessing/: contains the features extracted from the signals
     - sample_submission.csv: example of the desired output to get scored
@@ -33,4 +35,4 @@ Download the dataset here: https://www.kaggle.com/c/predict-volcanic-eruptions-i
     
    
 ## Results:
-I was able to reach the first position on the leaderboard with a score of 3.84e6 (mean absolute error).
+I was able to reach the 4th rank of the public leaderboard and 6th on the private one, with a score of 3.69e6 (mean absolute error).
