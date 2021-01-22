@@ -34,6 +34,23 @@ Download the dataset here: https://www.kaggle.com/c/predict-volcanic-eruptions-i
     - train.csv: file given in the dataset
     - lgbm_importances-01.png: features ordered by importance according to the decision tree
     
-   
+
+## Feature engineering
+The objective is to add information about the temporal series to characterize them. The list below is not exhaustive but i calculated for each of the 10 segments, 53 features:
+
+- Temporal characteristics:
+mean, var, amplitude, quantiles, rolling gradient amplitude, number of peaks (using tsfresh), autocorrelation, zeros-cross rate
+- Frequential features: mean/var/amplitude of imaginary and real parts of Fourier Transform.
+- Cepstral features: Mel-frequency cepstral coefficients (20 coeff)
+- Spectral features: the spectral_contrast (7 coefficients)
+
+All these features were calculated for each sensor (missing values set to -1) and saved as csv locally (90min to run for train + test sets).
+
+## Deep learning model
+The model I used contains a LSTM layer followed by 3 Conv1D layers (param 128, 84, 64). Then a flattening operation allows to send the data in 3 Dense layers (fully connected) (size 64, 32 and 1). Only ReLu activation function is used.
+The optimizer is Nadam with a learning rate of 5e-3, the loss is the MAE.
+
+8 models trained of subsets of the training sets were averaged to give the final submission.
+
 ## Results:
 I was able to reach the 4th rank of the public leaderboard and 6th on the private one, with a score of 3.69e6 (mean absolute error).
