@@ -13,18 +13,20 @@ from keras.callbacks import ModelCheckpoint
 from keras import models, optimizers
 from keras import backend as K
 
+import tensorflow
 import tensorflow as tf
 warnings.filterwarnings("ignore")
-sess = tf.compat.v1.Session(
-    config=tf.compat.v1.ConfigProto(log_device_placement=True))
+sess = tensorflow.compat.v1.Session(
+    config= tensorflow.compat.v1.ConfigProto(log_device_placement=True))
 from numpy.random import seed
-from tensorflow.random import set_seed
+from keras.models import load_model
+import keras.backend as K
 from utils import preprocess_data
 
 seed(2020)
-set_seed(2021)
+tf.random.set_random_seed(2021)
 
-NB_MODELS = 8
+NB_MODELS = 2
 K_FOLD = 5
 BATCH_SIZE = 4096*2
 EPOCHS = 1500
@@ -40,8 +42,7 @@ if GENERATE_PREPRO:
     test_set = preprocess_data("test")
     test_set.to_csv(PATH_PREPRO + "test_set.csv", index=False)
 else:
-  train_set = pd.read_csv(PATH_PREPRO + "train_set.csv")
-  test = pd.read_csv(PATH_PREPRO + "test_set.csv")
+    train_set = pd.read_csv(PATH_PREPRO + "train_set.csv")
   
 train = pd.read_csv(PATH_DATA + "train.csv")
 train_set = pd.merge(train_set, train, on='segment_id')
@@ -50,6 +51,7 @@ train_set = train_set.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
 train_sample = train_set.drop(['segment_id', 'time_to_eruption'], axis=1)
 targets = train_set['time_to_eruption']
 submission = pd.read_csv(PATH_DATA + 'sample_submission.csv')
+test = pd.read_csv(PATH_PREPRO + "test_set.csv")
 test.drop(['segment_id'], axis=1, inplace=True)
 test = test[train_sample.columns]
 
@@ -115,32 +117,32 @@ while i < NB_MODELS:
                                                  1, test_scaled.shape[1])
 
         model = get_model()
-        cb_checkpoint = ModelCheckpoint("model.hdf5",
-                                        monitor='val_mae',
-                                        save_weights_only=True,
-                                        save_best_only=True)
+        # cb_checkpoint = ModelCheckpoint("model.hdf5",
+        #                                 monitor='val_mae',
+        #                                 save_weights_only=True,
+        #                                 save_best_only=True)
 
         model.fit(train_x, train_y,
-                  epochs=EPOCHS, callbacks=[cb_checkpoint],
+                  epochs=EPOCHS,
                   batch_size=BATCH_SIZE, verbose=0,
                   validation_data=(valid_x, [valid_y]))
 
-        model.load_weights("model.hdf5")
+        # model.load_model("model.hdf5")
         oof[valid_index] += model.predict(valid_x).ravel()
         prediction += model.predict(test_scaled).ravel()/K_FOLD
-        K.clear_session()
 
     # Obtain the MAE for this run.
     model_score = mse(targets, oof, squared=False)/1e6
+    i += 1
 
     if model_score < 2.77:
-        print(f'MAE: {model_score:.2f} averaged')
+        print(f"MAE: {model_score} averaged")
+        print(model_score)
         oof_final += oof/NB_MODELS
         sub_final += prediction/NB_MODELS
-        i += 1
     else:
-        print(f'MAE: {model_score:.2f} not averaged')
-
+        print(f"MAE: {model_score} not averaged")
+        print(model_score)
 
 print(f"\nMAE for NN: {mse(targets, oof_final, squared=False):.0f}")
 submission['time_to_eruption'] = sub_final
